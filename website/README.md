@@ -1,6 +1,6 @@
 # vLLM Semantic Router Documentation
 
-This directory contains the Docusaurus-based documentation website for the vLLM Semantic Router project.
+This directory contains the Docusaurus-based documentation website for the vLLM Semantic Router project
 
 ## 🚀 Quick Start
 
