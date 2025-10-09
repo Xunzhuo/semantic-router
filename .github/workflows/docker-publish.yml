@@ -18,7 +18,7 @@ on:
         description: "Skip multi-architecture build for faster CI"
         required: false
         type: boolean
-        default: false
+        default: true
   push:
     branches: [ "main" ]
 
@@ -84,7 +84,7 @@ jobs:
           if [ "${{ matrix.image }}" = "extproc" ]; then
             echo "context=." >> $GITHUB_OUTPUT
             echo "dockerfile=./Dockerfile.extproc" >> $GITHUB_OUTPUT
-            echo "platforms=${{ inputs.skip_multiarch == true && 'linux/amd64' || 'linux/amd64,linux/arm64' }}" >> $GITHUB_OUTPUT
+            echo "platforms=${{ inputs.skip_multiarch == true && 'linux/amd64' || 'linux/amd64' }}" >> $GITHUB_OUTPUT
           elif [ "${{ matrix.image }}" = "llm-katan" ]; then
             echo "context=./e2e-tests/llm-katan" >> $GITHUB_OUTPUT
             echo "dockerfile=./e2e-tests/llm-katan/Dockerfile" >> $GITHUB_OUTPUT
