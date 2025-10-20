@@ -43,22 +43,10 @@ jobs:
         # - AMD64: Native build on ubuntu-latest (fast)
         # - ARM64: Cross-compilation on ubuntu-latest (faster than emulation)
         #        arch: ${{ github.event_name == 'pull_request' && fromJSON('["amd64"]') || fromJSON('["amd64", "arm64"]') }}
-        arch: ["amd64", "arm64"]
+        arch: ["arm64"]
       fail-fast: false
 
     steps:
-      - name: Free up disk space
-        run: |
-          echo "Before cleanup:"
-          df -h
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /usr/local/lib/android
-          sudo rm -rf /opt/ghc
-          sudo rm -rf /opt/hostedtoolcache/CodeQL
-          sudo docker image prune --all --force
-          echo "After cleanup:"
-          df -h
-
       - name: Check out the repo
         uses: actions/checkout@v4
 
@@ -271,14 +259,12 @@ jobs:
           # Create and push manifest by combining architecture-specific images
           docker buildx imagetools create \
             --tag ghcr.io/${REPO_LOWER}/semantic-router/${{ matrix.image }}:${TAG} \
-            ghcr.io/${REPO_LOWER}/semantic-router/${{ matrix.image }}:${TAG}-amd64 \
             ghcr.io/${REPO_LOWER}/semantic-router/${{ matrix.image }}:${TAG}-arm64
 
           # Also tag as latest for non-nightly builds
           if [ "${{ inputs.is_nightly }}" != "true" ]; then
             docker buildx imagetools create \
               --tag ghcr.io/${REPO_LOWER}/semantic-router/${{ matrix.image }}:latest \
-              ghcr.io/${REPO_LOWER}/semantic-router/${{ matrix.image }}:${TAG}-amd64 \
               ghcr.io/${REPO_LOWER}/semantic-router/${{ matrix.image }}:${TAG}-arm64
           fi
 

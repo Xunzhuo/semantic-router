@@ -1,4 +1,4 @@
-FROM quay.io/centos/centos:stream9
+FROM rockylinux:9
 
 RUN dnf -y update && \
     dnf -y install epel-release && \
