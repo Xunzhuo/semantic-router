@@ -10,8 +10,9 @@ from agent_support import REPO_ROOT
 
 TECH_DEBT_DIR = REPO_ROOT / "docs" / "agent" / "tech-debt"
 TECH_DEBT_REGISTER_DOC = REPO_ROOT / "docs" / "agent" / "tech-debt-register.md"
-TECH_DEBT_FILENAME_PATTERN = re.compile(r"^(TD\d{3})-[a-z0-9-]+\.md$")
+TECH_DEBT_FILENAME_PATTERN = re.compile(r"^td-(\d{3})-[a-z0-9-]+\.md$")
 TECH_DEBT_HEADING_PREFIX = "# TD"
+TECH_DEBT_ID_PATTERN = re.compile(r"^TD(\d{3})$")
 TECH_DEBT_ENTRY_REQUIRED_SECTIONS = [
     "## Status",
     "## Scope",
@@ -130,10 +131,13 @@ def validate_tech_debt_entries(
     errors: list[str],
 ) -> None:
     entry_ids: list[str] = []
+    filename_indices: list[str] = []
     for entry in entries:
-        item_id = validate_single_tech_debt_entry(
+        item_id, filename_index = validate_single_tech_debt_entry(
             entry, manifest_docs, debt_readme_text, errors
         )
+        if filename_index:
+            filename_indices.append(filename_index)
         if not item_id:
             continue
         entry_ids.append(item_id)
@@ -147,16 +151,29 @@ def validate_tech_debt_entries(
             + ", ".join(duplicate_entry_ids)
         )
 
+    duplicate_filename_indices = sorted(
+        {
+            filename_index
+            for filename_index in filename_indices
+            if filename_indices.count(filename_index) > 1
+        }
+    )
+    if duplicate_filename_indices:
+        errors.append(
+            "docs/agent/tech-debt has duplicate filename indices: "
+            + ", ".join(duplicate_filename_indices)
+        )
+
 
 def validate_single_tech_debt_entry(
     entry: dict[str, str | Path],
     manifest_docs: set[str],
     debt_readme_text: str,
     errors: list[str],
-) -> str:
+) -> tuple[str, str]:
     path = entry.get("path")
     if not isinstance(path, Path):
-        return ""
+        return "", ""
 
     relative_path = path.relative_to(REPO_ROOT).as_posix()
     validate_tech_debt_entry_inventory(
@@ -171,13 +188,19 @@ def validate_single_tech_debt_entry(
         errors.append(
             f"Tech debt entry '{relative_path}' must use a heading like '# TD001: Title'"
         )
-        return ""
+        return "", parse_tech_debt_filename_index(path.name)
 
-    if not path.name.startswith(f"{item_id}-"):
+    item_index = parse_tech_debt_index(item_id)
+    filename_index = parse_tech_debt_filename_index(path.name)
+    if item_index and not path.name.startswith(f"td-{item_index}-"):
         errors.append(
-            f"Tech debt entry '{relative_path}' filename must start with '{item_id}-'"
+            f"Tech debt entry '{relative_path}' filename must start with 'td-{item_index}-'"
         )
-    return item_id
+    if item_index and filename_index and item_index != filename_index:
+        errors.append(
+            f"Tech debt entry '{relative_path}' filename index '{filename_index}' must match heading index '{item_index}'"
+        )
+    return item_id, filename_index
 
 
 def validate_tech_debt_entry_inventory(
@@ -194,7 +217,7 @@ def validate_tech_debt_entry_inventory(
 
     if not TECH_DEBT_FILENAME_PATTERN.match(path.name):
         errors.append(
-            f"Tech debt entry '{relative_path}' must use a TD slug like 'TD001-example.md'"
+            f"Tech debt entry '{relative_path}' must use a slug like 'td-001-example.md'"
         )
 
     if f"({path.name})" not in debt_readme_text:
@@ -235,5 +258,17 @@ def parse_tech_debt_heading(text: str) -> tuple[str, str]:
     if ": " not in first_line:
         return "", ""
     item_id = first_line.removeprefix("# ").split(":", 1)[0].strip()
+    if not TECH_DEBT_ID_PATTERN.match(item_id):
+        return "", ""
     title = first_line.split(": ", 1)[1].strip()
     return item_id, title
+
+
+def parse_tech_debt_index(item_id: str) -> str:
+    match = TECH_DEBT_ID_PATTERN.match(item_id)
+    return match.group(1) if match else ""
+
+
+def parse_tech_debt_filename_index(filename: str) -> str:
+    match = TECH_DEBT_FILENAME_PATTERN.match(filename)
+    return match.group(1) if match else ""

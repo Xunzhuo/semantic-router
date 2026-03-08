@@ -62,6 +62,8 @@ Every execution plan should include:
 - `## Decision Log`
 - `## Follow-up Debt / ADR Links`
 
+Use file names such as `pl-0001-example.md`.
+
 Tasks should use stable IDs and explicit status markers such as:
 
 - `- [ ]`
@@ -71,4 +73,4 @@ Prefer one active execution plan per workstream.
 
 ## Current Execution Plans
 
-- [harness-roadmap.md](harness-roadmap.md)
+- [pl-0001-harness-roadmap.md](pl-0001-harness-roadmap.md)
